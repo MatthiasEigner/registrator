@@ -149,7 +149,7 @@ func (b *Bridge) Sync(quiet bool) {
 			return
 		}
 
-	Outer:
+		Outer:
 		for _, extService := range extServices {
 			matches := serviceIDPattern.FindStringSubmatch(extService.ID)
 			if len(matches) != 3 {
@@ -201,14 +201,18 @@ func (b *Bridge) add(containerId string, quiet bool) {
 	ports := make(map[string]ServicePort)
 
 	// Extract configured host port mappings, relevant when using --net=host
-	for port, _ := range container.Config.ExposedPorts {
-		published := []dockerapi.PortBinding{ {"0.0.0.0", port.Port()}, }
-		ports[string(port)] = servicePort(container, port, published)
+	//<<<<<<< HEAD
+	//	for port, _ := range container.Config.ExposedPorts {
+	//		published := []dockerapi.PortBinding{ {"0.0.0.0", port.Port()}, }
+	//		ports[string(port)] = servicePort(container, port, published)
+	//=======
+	for port, published := range container.HostConfig.PortBindings {
+		ports[string(port)] = servicePort(container, port, published, b.config.Network)
 	}
 
 	// Extract runtime port mappings, relevant when using --net=bridge
 	for port, published := range container.NetworkSettings.Ports {
-		ports[string(port)] = servicePort(container, port, published)
+		ports[string(port)] = servicePort(container, port, published, b.config.Network)
 	}
 
 	if len(ports) == 0 && !quiet {
@@ -216,8 +220,20 @@ func (b *Bridge) add(containerId string, quiet bool) {
 		return
 	}
 
-	servicePorts := make(map[string]ServicePort)
-	for key, port := range ports {
+	//<<<<<<< HEAD
+	//	servicePorts := make(map[string]ServicePort)
+	//	for key, port := range ports {
+	//=======
+	for _, port := range ports {
+		// If internal and can't evaluate the exposed IP (will happen on wrong network), ignore
+		if b.config.Internal == true && port.ExposedIP == "" {
+			if !quiet {
+				log.Println("ignored:", container.ID[:12], "internal IP not found on network", b.config.Network)
+			}
+			continue
+		}
+
+		//>>>>>>> 3f1a84b511bd1aae08f761fb8e75c5a5cfbbd7bd
 		if b.config.Internal != true && port.HostPort == "" {
 			if !quiet {
 				log.Println("ignored:", container.ID[:12], "port", port.ExposedPort, "not published on host")
@@ -301,7 +317,7 @@ func (b *Bridge) newService(port ServicePort, isgroup bool) *Service {
 				service.IP = containerIp
 			}
 			log.Println("using container IP " + service.IP + " from label '" +
-				b.config.UseIpFromLabel  + "'")
+				b.config.UseIpFromLabel + "'")
 		} else {
 			log.Println("Label '" + b.config.UseIpFromLabel +
 				"' not found in container configuration")
@@ -399,7 +415,7 @@ func (b *Bridge) shouldRemove(containerId string) bool {
 		return false
 	case container.State.ExitCode == 0:
 		return true
-	case container.State.ExitCode&dockerSignaledBit == dockerSignaledBit:
+	case container.State.ExitCode & dockerSignaledBit == dockerSignaledBit:
 		return true
 	}
 	return false
