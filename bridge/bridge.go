@@ -221,10 +221,10 @@ func (b *Bridge) add(containerId string, quiet bool) {
 	}
 
 	//<<<<<<< HEAD
-	//	servicePorts := make(map[string]ServicePort)
-	//	for key, port := range ports {
-	//=======
-	for _, port := range ports {
+	servicePorts := make(map[string]ServicePort)
+	for key, port := range ports {
+		//=======
+		//for _, port := range ports {
 		// If internal and can't evaluate the exposed IP (will happen on wrong network), ignore
 		if b.config.Internal == true && port.ExposedIP == "" {
 			if !quiet {
