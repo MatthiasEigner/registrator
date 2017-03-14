@@ -1,4 +1,4 @@
-//go:generate go-extpoints . AdapterFactory
+	//go:generate go-extpoints . AdapterFactory
 package bridge
 
 import (
@@ -20,7 +20,7 @@ type RegistryAdapter interface {
 }
 
 type Config struct {
-	NodeId			string
+	NodeId		string
 	HostIp          string
 	Internal        bool
 	UseIpFromLabel  string
@@ -29,7 +29,7 @@ type Config struct {
 	RefreshInterval int
 	DeregisterCheck string
 	Cleanup         bool
-    Network         string
+    	Network         string
 }
 
 type Service struct {
